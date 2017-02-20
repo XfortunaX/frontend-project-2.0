@@ -5,6 +5,8 @@ var app = express();
 
 app.use(express.static(__dirname + '/static'));
 
-app.listen(3000, function () {
+const port = process.env.PORT || 3000;
+
+app.listen(port, function () {
     console.log('Listen port: 3000!');
 });
