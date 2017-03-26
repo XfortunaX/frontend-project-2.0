@@ -15,7 +15,11 @@
   "homepage": "https://github.com/XfortunaX/sample.git#readme",
   "dependencies": {
     "express": "^4.14.1",
-    "matter-js":"",
+    "matter-js": "",
     "randomstrings": ""
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.0",
+    "babel-preset-es2015": "^6.24.0"
   }
 }
