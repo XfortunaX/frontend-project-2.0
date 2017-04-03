@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/three/three.js"></script>
+    <script src="js/three/Detector.js"></script>
+    <script src="js/three/CanvasRenderer.js"></script>
+    <script src="js/three/Projector.js"></script>
+</head>
+<body>
+<div id="overlaytext" style="position: absolute; top: 10px; left: 10px">
+    'F': Loop through the three texture filters (only for WebGL renderer)<br/>
+    'L': Toggle light (only for WebGL renderer)<br/>
+    Cursor left / right: Control y rotation speed<br/>
+    Cursor up / down: Control x rotation speed<br/>
+    Page up / down: Move along z axis<br/>
+    Renderer:
+</div>
+<div id="WebGLCanvas">
+    <script>
+        // Global scene object
+        var scene;
+        // Global camera object
+        var camera;
+        // x and y rotation
+        var xRotation = 0.0;
+        var yRotation = 0.0;
+        // Rotation speed around x and y axis
+        var xSpeed = 0.0;
+        var ySpeed = 0.0;
+        // Translation along the z axis
+        var zTranslation = 0.0;
+        // Texture and flag for current texture filter
+        var crateTexture;
+        var textureFilter = 0;
+        // Flag for toggling light
+        var lightIsOn = true;
+
+        // Initialize the scene
+        initializeScene();
+        // Animate the scene
+        animateScene();
+
+        function initializeScene() {
+            webGLAvailable = false;
+            if(Detector.webgl){
+                renderer = new THREE.WebGLRenderer({antialias:true});
+                webGLAvailable = true;
+                document.getElementById("overlaytext").innerHTML += "WebGL Renderer";
+            } else {
+                renderer = new THREE.CanvasRenderer();
+                document.getElementById("overlaytext").innerHTML += "Canvas Renderer";
+            }
+            // Set the background color of the renderer to black, with full opacity
+            renderer.setClearColor(0x000000, 1);
+            canvasWidth = window.innerWidth - 10;
+            canvasHeight = window.innerHeight - 20;
+            // Set the renderers size to the content areas size
+            renderer.setSize(canvasWidth, canvasHeight);
+            document.getElementById("WebGLCanvas").appendChild(renderer.domElement);
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, canvasWidth / canvasHeight, 1, 100);
+            camera.position.set(0, 0, 6);
+            camera.lookAt(scene.position);
+            scene.add(camera);
+            // Create the cube
+            var boxGeometry = new THREE.BoxGeometry(2.0, 2.0, 2.0);
+            // Load an image as texture
+            crateTexture = new THREE.ImageUtils.loadTexture("images/Crate.jpg");
+            var boxMaterial = new THREE.MeshLambertMaterial({
+                map:crateTexture,
+                side:THREE.DoubleSide
+            });
+            if(!webGLAvailable){
+                boxMaterial = new THREE.MeshBasicMaterial({
+                    map:crateTexture,
+                    side:THREE.DoubleSide
+                });
+            }
+            boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+            boxMesh.position.set(camera.position.x, camera.position.y, camera.position.z);
+            scene.add(boxMesh);
+            var ambientLight = new THREE.AmbientLight(0x101010, 1.0);
+            scene.add(ambientLight);
+            directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight.position.set(0.0, 0.0, 1.0);
+            scene.add(directionalLight);
+            document.addEventListener("keydown", onDocumentKeyDown, false);
+        }
+
+        function onDocumentKeyDown(event){
+            var keyCode = event.which;
+            // 'F' - Toggle through the texture filters
+            if(keyCode == 70){
+                // The CanvasRenderer doesn't support texture filters.
+                switch(textureFilter){
+                    case 0:
+                        crateTexture.minFilter = THREE.NearestFilter;
+                        crateTexture.magFilter = THREE.NearestFilter;
+                        textureFilter = 1;
+                        break;
+                    case 1:
+                        crateTexture.minFilter = THREE.LinearFilter;
+                        crateTexture.magFilter = THREE.LinearFilter;
+                        textureFilter = 2;
+                        break;
+                    case 2:
+                        crateTexture.minFilter = THREE.LinearFilter;
+                        crateTexture.magFilter = THREE.LinearMipMapNearestFilter;
+                        textureFilter = 0;
+                        break;
+                };
+                crateTexture.needsUpdate = true;
+            } else if(keyCode == 76){
+                if(lightIsOn){
+                    boxMesh.material = new THREE.MeshBasicMaterial({
+                        map:crateTexture,
+                        side:THREE.DoubleSide
+                    });
+                    lightIsOn = false;
+                } else {
+                    if(webGLAvailable){
+                        boxMesh.material = new THREE.MeshLambertMaterial({
+                            map:crateTexture,
+                            side:THREE.DoubleSide
+                        });
+                    } else {
+                        boxMesh.material = new THREE.MeshBasicMaterial({
+                            map:crateTexture,
+                            side:THREE.DoubleSide
+                        });
+                    }
+                    lightIsOn = true;
+                }
+                boxMesh.material.needsUpdate = true;
+                // Cursor up
+            } else if(keyCode == 38){
+                xSpeed -= 0.01;
+                // Cursor down
+            } else if(keyCode == 40){
+                xSpeed += 0.01;
+                // Cursor left
+            } else if(keyCode == 37){
+                ySpeed -= 0.01;
+                // Cursor right
+            } else if(keyCode == 39){
+                ySpeed += 0.01;
+                // Page up
+            } else if(keyCode == 33){
+                zTranslation -= 0.2;
+                // Page down
+            } else if(keyCode == 34){
+                zTranslation += 0.2;
+            }
+        }
+
+        function animateScene(){
+            directionalLight.position = camera.position;
+            xRotation += xSpeed;
+            yRotation += ySpeed;
+            boxMesh.rotation.set(xRotation, yRotation, 0.0);
+
+            boxMesh.position.z = zTranslation;
+
+            requestAnimationFrame(animateScene);
+
+            renderScene();
+        }
+
+        function renderScene(){
+            renderer.render(scene, camera);
+        }
+
+    </script>
+</div>
+</body>
+</html>
